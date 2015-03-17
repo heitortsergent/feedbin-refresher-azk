@@ -1,0 +1,6 @@
+[submodule "feedbin"]
+	path = feedbin
+	url = https://github.com/heitortsergent/feedbin.git
+[submodule "refresher"]
+	path = refresher
+	url = https://github.com/heitortsergent/refresher.git
