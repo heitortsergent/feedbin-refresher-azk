@@ -11,7 +11,8 @@ systems({
     image: {"docker": "azukiapp/ruby:2.1.4"},
     // Steps to execute before running instances
     provision: [
-      "bundle install --path /azk/bundler",
+      "bundle install --path /azk/2.1.4/bundler",
+      "bundle exec rake db:setup",
     ],
     workdir: "/azk/#{manifest.dir}/feedbin",
     shell: "/bin/bash",
@@ -19,7 +20,7 @@ systems({
     wait: {"retry": 40, "timeout": 10000},
     mounts: {
       '/azk/#{manifest.dir}/feedbin': path("./feedbin"),
-      '/azk/bundler': persistent("bundler"),
+      '/azk/2.1.4/bundler': persistent("bundler-2.1.4"),
     },
     scalable: {"default": 1},
     http: {
@@ -28,15 +29,11 @@ systems({
     envs: {
       // set instances variables
       RUBY_ENV: "development",
-      BUNDLE_APP_CONFIG: "/azk/bundler",
+      BUNDLE_APP_CONFIG: "/azk/2.1.4/bundler",
     },
   },
   worker: {
     extends: 'feedbin',
-    provision: [
-      "bundle install --path /azk/bundler",
-      "bundle exec rake db:setup",
-    ],
     depends: ["postgres", "redis", "elasticsearch", "memcached"],
     command: 'bundle exec sidekiq -c 12 -q critical,2 -q feed_refresher_receiver,1 -q default',
     scalable: { limit: 1, default: 1},
@@ -70,7 +67,7 @@ systems({
     image: {"docker": "azukiapp/ruby:2.2"},
     // Steps to execute before running instances
     provision: [
-      "bundle install --path /azk/bundler",
+      "bundle install --path /azk/2.2/bundler",
     ],
     workdir: "/azk/#{manifest.dir}/refresher",
     shell: "/bin/bash",
@@ -78,14 +75,14 @@ systems({
     wait: {"retry": 20, "timeout": 1000},
     mounts: {
       '/azk/#{manifest.dir}/refresher': path("./refresher"),
-      '/azk/bundler': persistent("bundler"),
+      '/azk/2.2/bundler': persistent("bundler-2.2"),
     },
     scalable: {"default": 1},
     http: null,
     envs: {
       // set instances variables
       RUBY_ENV: "development",
-      BUNDLE_APP_CONFIG: "/azk/bundler",
+      BUNDLE_APP_CONFIG: "/azk/2.2/bundler",
     },
   },
   redis: {
@@ -115,17 +112,11 @@ systems({
       POSTGRESQL_USER: "azk",
       POSTGRESQL_PASS: "azk",
       POSTGRESQL_DB: "postgres_development",
-      POSTGRESQL_HOST: "#{net.host}",
-      POSTGRESQL_PORT: "#{net.port.data}",
     },
     export_envs: {
       // check this gist to configure your database
       // https://gist.github.com/gullitmiranda/62082f2e47c364ef9617
       POSTGRES_USERNAME: "azk",
-      POSTGRES_PASSWORD: "azk",
-      POSTGRES_DATABASE: "feedbin_development",
-      POSTGRES_HOST: "#{net.host}",
-      POSTGRES_PORT: "#{net.port.data}",
       DATABASE_URL: "postgres://#{envs.POSTGRESQL_USER}:#{envs.POSTGRESQL_PASS}@#{net.host}:#{net.port.data}/${envs.POSTGRESQL_DB}",
     },
   },
